@@ -17,25 +17,24 @@ Setup observability for services implemented in the previous lab, including:
 - Use the same port of the service because the traffic is low and to reduce complexity. This is possible because both Prometheus and REST use plain HTTP.
 - Prometheus works as a middleware in FastAPI webserver.
 
-**Metrics scraped:**
-- `http_request_duration_seconds`
-- `http_requests_total`
-
-**Tested PromQL queries:**
-- Rate in the last 1 minute
-- Latency p95 in the last 5 minutes
-- Error rate in the last 5 minutes
-
+- Metrics scraped:
+	- `http_request_duration_seconds`
+	- `http_requests_total`
+- Tested PromQL queries:
+	- Rate in the last 1 minute
+	- Latency p95 in the last 5 minutes
+	- Error rate in the last 5 minutes
+	
 #### gRPC-service
 
 - Use different port since gRPC uses HTTP/2 while Prometheus uses HTTP.
 - Prometheus works as an Interceptor.
 
-**Metrics scraped:**
-- `grpc_server_handling_seconds`
+- Metrics scraped:
+  - `grpc_server_handling_seconds`
 
-**Tested PromQL queries:**
-- Latency p95 in the last 5 minutes
+- Tested PromQL queries:
+	- Latency p95 in the last 5 minutes
 
 ---
 
