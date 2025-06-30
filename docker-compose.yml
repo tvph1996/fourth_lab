@@ -1,11 +1,11 @@
 services:
+
+
   mongodb:
     image: mongo:latest
     container_name: mongodb
     ports:
       - "27017:27017"
-    #volumes:
-      #- mongo-data:/data/db
 
 
   grpc-service:
@@ -16,11 +16,9 @@ services:
       MONGO_HOST: mongodb
       MONGO_PORT: 27017
       MONGO_DB: itemsdb
-    #healthcheck:
-      #test: ["CMD", "grpc_health_probe", "-addr=:50051"]
-      #interval: 10s
-      #timeout: 3s
-      #retries: 3
+      
+      OTEL_EXPORTER_OTLP_ENDPOINT: "otel-collector:4317"
+
     ports:
       - "50051:50051"
       - "9103:9103" # Prometheus
@@ -89,5 +87,4 @@ services:
 
       
 volumes:
-  #mongo-data:
   grafana-data:

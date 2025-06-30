@@ -30,7 +30,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 
 # --- OpenTelemetry Setup ---
-# Set up a resource to identify service
+
 resource = Resource(attributes={
     "service.name": "rest-service"
 })
@@ -53,10 +53,10 @@ trace.set_tracer_provider(provider)
 # Instrument the gRPC client to automatically create spans for outgoing calls
 GrpcInstrumentorClient().instrument()
 
-# --- End OpenTelemetry Setup ---
 
 
 app = FastAPI()
+
 
 
 # Prometheus Metrics
@@ -71,6 +71,7 @@ REQUEST_COUNTER = Counter(
     "Total HTTP requests",
     ["method", "endpoint", "status_code"]
 )
+
 
 
 # --- Record Metrics for FastAPI REST-service ---
@@ -90,7 +91,6 @@ async def track_metrics(request: Request, call_next):
     if request.scope.get('root_path'):
          endpoint = request.scope['root_path'] + endpoint
 
-
     REQUEST_LATENCY.labels(request.method, endpoint).observe(process_time)
 
     REQUEST_COUNTER.labels(request.method, endpoint, response.status_code).inc()
@@ -103,6 +103,7 @@ def metrics():
     return Response(content=generate_latest(), media_type="text/plain; version=0.0.4")
 
 
+
 # gRPC Setup
 GRPC_HOST = os.getenv("GRPC_HOST", "localhost")
 GRPC_PORT = os.getenv("GRPC_PORT", "50051")
@@ -112,9 +113,11 @@ gRPC_channel = grpc.insecure_channel(GRPC_ADDRESS)
 gRPC_methods = myitems_pb2_grpc.ItemServiceStub(gRPC_channel)
 
 
+
 # Circuit Breaker Setup
 breaker = CircuitBreaker(fail_max=3, reset_timeout=6)
 MAX_RETRIES = 2
+
 
 
 # --- FastAPI REST-server Setup ---
@@ -175,7 +178,6 @@ async def add_item(request: Request):
             delay *= 2
     
     
-
 
 @app.get("/items/")
 def get_items(item_id: int = 0, name: str = ""):
@@ -259,11 +261,12 @@ def delete_item(item_id: int):
             raise HTTPException(status_code=500, detail=f"gRPC-service failure: {e.details()}")
 
 
-# Instrument FastAPI to automatically create spans for incoming requests
+
+# Instrument FastAPI
 FastAPIInstrumentor.instrument_app(app)
 
 
-# Startup
 
+# Startup
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=5000)

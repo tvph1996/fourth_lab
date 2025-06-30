@@ -10,11 +10,52 @@ from collections import OrderedDict
 from py_grpc_prometheus.prometheus_server_interceptor import PromServerInterceptor
 from prometheus_client import start_http_server
 
+from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.instrumentation.grpc import GrpcInstrumentorServer
+from opentelemetry.sdk.resources import Resource
+
+
+
+# Initialize OpenTelemetry
+def init_tracing():
+    
+    resource = Resource(attributes={
+        "service.name": "grpc-service",
+        "service.version": "1.0"
+    })
+    
+    # Create tracer provider with OTLP exporter
+    provider = TracerProvider(resource=resource)
+    trace.set_tracer_provider(provider)
+    
+    # Configure OTLP exporter with TLS disabled
+    otlp_endpoint = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "otel-collector:4317")
+    
+    exporter = OTLPSpanExporter(
+        endpoint=otlp_endpoint,
+        insecure=True
+    )
+    
+    provider.add_span_processor(BatchSpanProcessor(exporter))
+    
+    # Instrument gRPC server
+    GrpcInstrumentorServer().instrument()
+
+
+
+tracer = trace.get_tracer(__name__)
+
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 
 # Cache to hold up to 1000 items
 CACHE_MAX_SIZE = 1000
 item_cache = OrderedDict()
+
 
 
 # --- MongoDB Connection ---
@@ -46,7 +87,11 @@ except Exception as e:
 class ItemServiceServicer(myitems_pb2_grpc.ItemServiceServicer):
 
 
-    def AddItem(self, request, context):   
+    def AddItem(self, request, context):
+        
+        with tracer.start_as_current_span("MongoDB Insert") as span:
+            span.set_attribute("db.operation", "insert_one")
+            span.set_attribute("db.collection", "items")
         
         logging.info(f"Request to add item: id={request.id}, name='{request.name}'")
 
@@ -211,18 +256,22 @@ class ItemServiceServicer(myitems_pb2_grpc.ItemServiceServicer):
 # --- gRPC Server Run ---
 def serve():
     
+    # Start tracing at first
+    init_tracing()
+
+    
     # Start Prometheus metrics HTTP server
     start_http_server(9103)
     logging.info("Prometheus metrics server started on port 9103.")
 
-    custom_buckets = (0.0005, 0.001, 0.0025, 0.005, 0.01)
 
     # Start gRPC-server WITH Prometheus as interceptor
     server = grpc.server(
         futures.ThreadPoolExecutor(max_workers=10),
-        interceptors=(PromServerInterceptor(enable_handling_time_histogram=True),)
+        interceptors=[PromServerInterceptor(enable_handling_time_histogram=True)]
     )
     myitems_pb2_grpc.add_ItemServiceServicer_to_server(ItemServiceServicer(), server)
+
     
     # Start the gRPC server
     port = os.environ.get("GRPC_PORT", "50051")

@@ -27,8 +27,17 @@ simulate the traffic by creating a python script, sending request every 2 secs
 
 prometheus screenshot explain
 
-[rest-service] 
-  └─(OTLP-gRPC)→ [otel-collector:4317 (manually configured)] 
-                   └─(OTLP-gRPC)→ [jaeger:4317 (internally supported)]
+[rest-service & gRPC-service]
+              └─(OTLP-gRPC) → [otel-collector:4317 (manually configured)] 
+                                              └─(OTLP-gRPC) → [jaeger:4317 (internally supported by framework)]
 
-not sure why rest-service response consists of 3 small spans, maybe the framework design?                                     
+not sure why rest-service response consists of 3 small spans, maybe the framework design?
+
+0.5ms increase in latency  due to OpenTelemetry instrumentation
+    + this is 10% of timing in this setup -> worth it for important calls or calls that is not ultra low latency
+    solution could be only trace a percentage of requests instead of everything (supported also by otel)
+    
+there are conflicts between grpc & opentelemetry libraries that leads to version downgrade and rebuilt since binary not available
+
+
+portainer: admin, H.g.t.124101                           
