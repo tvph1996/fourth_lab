@@ -35,6 +35,7 @@ services:
     environment:
       GRPC_HOST: grpc-service
       GRPC_PORT: 50051
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
 
 
   prometheus:
@@ -49,6 +50,7 @@ services:
     ports:
       - "9090:9090"
 
+
   grafana:
     image: grafana/grafana:10.4.2
     container_name: grafana
@@ -59,7 +61,32 @@ services:
     volumes:
       # Mount the provisioning files from project into the container
       - ./observability/grafana-provisioning:/etc/grafana/provisioning:ro,Z
-      - grafana-data:/var/lib/grafana  
+      - grafana-data:/var/lib/grafana
+
+      
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: otel-collector
+    command: ["--config=/etc/otel-collector-config.yml"]
+    volumes:
+      - ./observability/otel-collector-config.yml:/etc/otel-collector-config.yml:ro,Z
+    ports:
+      - "4317:4317" # OTLP gRPC receiver
+      - "4318:4318" # OTLP HTTP receiver
+    depends_on:
+      - jaeger
+
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    ports:
+      - "16686:16686" # Jaeger UI
+      - "14268:14268"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+
+      
 volumes:
   #mongo-data:
   grafana-data:

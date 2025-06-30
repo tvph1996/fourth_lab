@@ -12,12 +12,46 @@ import warnings
 import time
 from prometheus_client import Counter, Histogram, generate_latest
 
+# --- OpenTelemetry Imports ---
+from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.instrumentation.grpc import GrpcInstrumentorClient
+
 
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+
+# --- OpenTelemetry Setup ---
+# Set up a resource to identify service
+resource = Resource(attributes={
+    "service.name": "rest-service"
+})
+
+# Set up a TracerProvider
+provider = TracerProvider(resource=resource)
+
+# Set up a BatchSpanProcessor and OTLPSpanExporter
+# Sends traces to the OTel Collector endpoint configured in docker-compose.yml
+otlp_exporter = OTLPSpanExporter()
+processor = BatchSpanProcessor(otlp_exporter)
+provider.add_span_processor(processor)
+
+# Sets the global default tracer provider
+trace.set_tracer_provider(provider)
+
+# Instrument the gRPC client to automatically create spans for outgoing calls
+GrpcInstrumentorClient().instrument()
+
+# --- End OpenTelemetry Setup ---
+
 
 app = FastAPI()
 
@@ -221,6 +255,9 @@ def delete_item(item_id: int):
         else:
             raise HTTPException(status_code=500, detail=f"gRPC-service failure: {e.details()}")
 
+
+# Instrument FastAPI to automatically create spans for incoming requests
+FastAPIInstrumentor.instrument_app(app)
 
 
 # Startup
