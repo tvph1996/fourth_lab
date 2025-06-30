@@ -7,7 +7,8 @@ from pymongo import MongoClient, errors
 import myitems_pb2
 import myitems_pb2_grpc
 from collections import OrderedDict
-
+from py_grpc_prometheus.prometheus_server_interceptor import PromServerInterceptor
+from prometheus_client import start_http_server
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -210,9 +211,19 @@ class ItemServiceServicer(myitems_pb2_grpc.ItemServiceServicer):
 
 # --- gRPC Server Run ---
 def serve():
+    
+    # Start Prometheus metrics HTTP server
+    start_http_server(9103)
+    logging.info("Prometheus metrics server started on port 9103.")
 
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    # Start gRPC-server WITH Prometheus as interceptor
+    server = grpc.server(
+        futures.ThreadPoolExecutor(max_workers=10),
+        interceptors=(PromServerInterceptor(enable_handling_time_histogram=True),)
+    )
     myitems_pb2_grpc.add_ItemServiceServicer_to_server(ItemServiceServicer(), server)
+    
+    # Start the gRPC server
     port = os.environ.get("GRPC_PORT", "50051")
     server.add_insecure_port(f"[::]:{port}")
     server.start()

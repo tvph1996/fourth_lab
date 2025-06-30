@@ -1,0 +1,12 @@
+global:
+  scrape_interval: 15s 
+
+scrape_configs:
+
+  - job_name: "rest-service"
+    static_configs:
+      - targets: ["rest-service:5000"]
+
+  - job_name: "grpc-service"
+    static_configs:
+      - targets: ["grpc-service:9103"]

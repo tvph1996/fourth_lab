@@ -16,13 +16,14 @@ services:
       MONGO_HOST: mongodb
       MONGO_PORT: 27017
       MONGO_DB: itemsdb
-    healthcheck:
-      test: ["CMD", "grpc_health_probe", "-addr=:50051"]
-      interval: 10s
-      timeout: 3s
-      retries: 3
+    #healthcheck:
+      #test: ["CMD", "grpc_health_probe", "-addr=:50051"]
+      #interval: 10s
+      #timeout: 3s
+      #retries: 3
     ports:
       - "50051:50051"
+      - "9103:9103" # Prometheus
 
 
   rest-service:
@@ -35,6 +36,29 @@ services:
       GRPC_HOST: grpc-service
       GRPC_PORT: 50051
 
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      # Mount the configuration file from project into the container
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      # Tell Prometheus to use the configuration file just mounted
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    container_name: grafana
+    depends_on:
+      - prometheus
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount the provisioning files from project into the container
+      - ./observability/grafana-provisioning:/etc/grafana/provisioning:ro
 
 #volumes:
   #mongo-data:

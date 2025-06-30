@@ -1,0 +1,7 @@
+in rest-service, prometheus use same port 5000 instead of a separated port since the traffic in a lab is low and reduce comlplexity and also possible because they both use plain HTTP 
+
+in grpc-service, 
+    prometheus use different port - 9103 since gRPC using HTTP/2 while Prometheus use HTTP
+    prometheus works as interceptor
+
+

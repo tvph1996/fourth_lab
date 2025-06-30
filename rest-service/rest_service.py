@@ -9,6 +9,9 @@ from pybreaker import CircuitBreaker, CircuitBreakerError # type: ignore
 import asyncio
 import json
 import warnings
+import time
+from prometheus_client import Counter, Histogram, generate_latest
+
 
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -17,6 +20,50 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 app = FastAPI()
+
+
+# Prometheus Metrics
+REQUEST_LATENCY = Histogram(
+    "http_request_duration_seconds",
+    "Request latency",
+    ["method", "endpoint"]
+)
+
+REQUEST_COUNTER = Counter(
+    "http_requests_total",
+    "Total HTTP requests",
+    ["method", "endpoint", "status_code"]
+)
+
+
+# --- Record Metrics for FastAPI REST-service ---
+
+# Worker to collect data from all requests
+@app.middleware("http")
+async def track_metrics(request: Request, call_next):
+    
+    start_time = time.time()
+
+    response = await call_next(request)
+
+    process_time = time.time() - start_time
+    endpoint = request.url.path
+
+    # Group paths like /items/{item_id}
+    if request.scope.get('root_path'):
+         endpoint = request.scope['root_path'] + endpoint
+
+
+    REQUEST_LATENCY.labels(request.method, endpoint).observe(process_time)
+
+    REQUEST_COUNTER.labels(request.method, endpoint, response.status_code).inc()
+
+    return response
+
+# Expose collected data
+@app.get("/metrics", status_code=200)
+def metrics():
+    return Response(content=generate_latest(), media_type="text/plain; version=0.0.4")
 
 
 # gRPC Setup
