@@ -1,5 +1,6 @@
 *:Zone.Identifier*
 ~$*
-*venv
+venv
+env
 *.pdf
 .spyproject
