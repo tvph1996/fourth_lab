@@ -30,12 +30,13 @@ services:
     build: ./rest-service
     depends_on:
       - grpc-service
+      - otel-collector
     ports:
       - "5000:5000"
     environment:
       GRPC_HOST: grpc-service
       GRPC_PORT: 50051
-      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "otel-collector:4317" 
 
 
   prometheus:
@@ -71,8 +72,8 @@ services:
     volumes:
       - ./observability/otel-collector-config.yml:/etc/otel-collector-config.yml:ro,Z
     ports:
-      - "4317:4317" # OTLP gRPC receiver
-      - "4318:4318" # OTLP HTTP receiver
+      - "4317:4317" # OTLP-gRPC receiver
+      # not used - "4318:4318" # OTLP-HTTP receiver
     depends_on:
       - jaeger
 

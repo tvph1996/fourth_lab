@@ -26,3 +26,9 @@ in grpc-service,
 simulate the traffic by creating a python script, sending request every 2 secs
 
 prometheus screenshot explain
+
+[rest-service] 
+  └─(OTLP-gRPC)→ [otel-collector:4317 (manually configured)] 
+                   └─(OTLP-gRPC)→ [jaeger:4317 (internally supported)]
+
+not sure why rest-service response consists of 3 small spans, maybe the framework design?                                     
