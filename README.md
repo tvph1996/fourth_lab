@@ -76,3 +76,5 @@ http://localhost:9090
 http://localhost:3000
 ### Jaeger
 http://localhost:16686
+### Report
+*report.docx*
