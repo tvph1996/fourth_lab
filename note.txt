@@ -1,4 +1,3 @@
-environment changed from Windows: WSL & Docker Desktop (both are VM) -> native Linux
 
 in rest-service, prometheus:
     - use same port 5000 instead of a separated port since the traffic in a lab is low and reduce comlplexity and also possible because they both use plain HTTP 
