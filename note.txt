@@ -1,7 +1,28 @@
-in rest-service, prometheus use same port 5000 instead of a separated port since the traffic in a lab is low and reduce comlplexity and also possible because they both use plain HTTP 
+environment changed from Windows: WSL & Docker Desktop (both are VM) -> native Linux
+
+in rest-service, prometheus:
+    - use same port 5000 instead of a separated port since the traffic in a lab is low and reduce comlplexity and also possible because they both use plain HTTP 
+    - scrape
+        + http_request_duration_seconds by [methods, endpoint]
+        + http_requests_total by [method, endpoint, status_code]     
+
+    - golden signals:
+        + rate last 1 minute: rate(http_requests_total[1m]) 
+        + latency 95%: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))
+        + error rate: sum(rate(http_requests_total{status_code=~"5..|4.."}[5m])) / sum(rate(http_requests_total[5m]))
+
 
 in grpc-service, 
-    prometheus use different port - 9103 since gRPC using HTTP/2 while Prometheus use HTTP
-    prometheus works as interceptor
+    - prometheus use different port - 9103 since gRPC using HTTP/2 while Prometheus use HTTP
+    - prometheus works as interceptor
+    - scrape:
+        + grpc_server_handling_seconds with custom bucket 0.5ms since very fast
+        
+    - golden signals:
+        + latency 95%: histogram_quantile(0.95, sum(rate(grpc_server_handling_seconds_bucket[5m])) by (le))
 
 
+
+simulate the traffic by creating a python script, sending request every 2 secs
+
+prometheus screenshot explain

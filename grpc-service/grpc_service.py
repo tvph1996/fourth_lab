@@ -12,7 +12,6 @@ from prometheus_client import start_http_server
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-
 # Cache to hold up to 1000 items
 CACHE_MAX_SIZE = 1000
 item_cache = OrderedDict()
@@ -215,6 +214,8 @@ def serve():
     # Start Prometheus metrics HTTP server
     start_http_server(9103)
     logging.info("Prometheus metrics server started on port 9103.")
+
+    custom_buckets = (0.0005, 0.001, 0.0025, 0.005, 0.01)
 
     # Start gRPC-server WITH Prometheus as interceptor
     server = grpc.server(

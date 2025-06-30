@@ -42,7 +42,7 @@ services:
     container_name: prometheus
     volumes:
       # Mount the configuration file from project into the container
-      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro,Z
     command:
       # Tell Prometheus to use the configuration file just mounted
       - "--config.file=/etc/prometheus/prometheus.yml"
@@ -58,7 +58,8 @@ services:
       - "3000:3000"
     volumes:
       # Mount the provisioning files from project into the container
-      - ./observability/grafana-provisioning:/etc/grafana/provisioning:ro
-
-#volumes:
+      - ./observability/grafana-provisioning:/etc/grafana/provisioning:ro,Z
+      - grafana-data:/var/lib/grafana  
+volumes:
   #mongo-data:
+  grafana-data:
