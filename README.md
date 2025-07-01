@@ -41,10 +41,10 @@ Setup observability for services implemented in the previous lab, including:
 ### 2. GRAFANA
 
 - Custom Dashboard with panels:
-  1. REST-service Rate
-  2. REST-service Latency p95
-  3. REST-service Error Rate
-  4. gRPC-service Latency p95
+  1. REST-service Rate (span of 2 minutes)
+  2. REST-service Latency p95 (span of 5 minutes)
+  3. REST-service Error Rate (span of 5 minutes)
+  4. gRPC-service Latency p95 (span of 5 minutes)
 
 ---
 
